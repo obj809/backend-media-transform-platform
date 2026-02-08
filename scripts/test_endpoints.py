@@ -15,6 +15,13 @@ def test_all_endpoints():
         print(f"  Response: {response.json()}")
         print()
 
+        # GET /health
+        print("GET /health")
+        response = client.get("/health")
+        print(f"  Status: {response.status_code}")
+        print(f"  Response: {response.json()}")
+        print()
+
 
 if __name__ == "__main__":
     test_all_endpoints()

@@ -12,7 +12,7 @@ pip install -r requirements.txt
 
 ## run server
 
-uvicorn app.main:app --reload
+./venv/bin/python -m uvicorn app.main:app --reload
 
 ## test endpoints
 
