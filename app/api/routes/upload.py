@@ -3,11 +3,21 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
+from PIL import Image
 
 router = APIRouter()
 
 UPLOADS_DIR = Path(__file__).parent.parent.parent.parent / "uploads"
+PROCESSED_DIR = Path(__file__).parent.parent.parent.parent / "processed"
 UPLOADS_DIR.mkdir(exist_ok=True)
+PROCESSED_DIR.mkdir(exist_ok=True)
+
+
+def process_image(input_path: Path, output_path: Path):
+    """Process image using Pillow - converts to grayscale."""
+    with Image.open(input_path) as img:
+        processed = img.convert("L")
+        processed.save(output_path, "JPEG", quality=85)
 
 
 @router.post("/upload")
@@ -30,10 +40,17 @@ async def upload_file(file: UploadFile = File(...)):
     with open(file_path, "wb") as f:
         f.write(contents)
 
+    # Process the image
+    processed_filename = f"processed_{unique_filename}"
+    processed_path = PROCESSED_DIR / processed_filename
+    process_image(file_path, processed_path)
+
     return {
         "filename": file.filename,
         "stored_filename": unique_filename,
+        "processed_filename": processed_filename,
         "size": len(contents),
+        "processed_size": os.path.getsize(processed_path),
         "content_type": file.content_type,
-        "status": "uploaded"
+        "status": "processed"
     }
