@@ -16,3 +16,4 @@ def test_all_endpoints():
     health_response = client.get("/health")
     assert health_response.status_code == 200
     assert health_response.json() == {"status": "ok"}
+
