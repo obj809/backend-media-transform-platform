@@ -1,27 +1,18 @@
 #!/usr/bin/env python3
-"""Script to test all API endpoints."""
+"""Basic endpoint checks that run inside pytest without a live server."""
 
-import httpx
+from fastapi.testclient import TestClient
 
-BASE_URL = "http://localhost:8000"
+from app.main import app
 
 
 def test_all_endpoints():
-    with httpx.Client(base_url=BASE_URL) as client:
-        # GET /
-        print("GET /")
-        response = client.get("/")
-        print(f"  Status: {response.status_code}")
-        print(f"  Response: {response.json()}")
-        print()
+    client = TestClient(app)
 
-        # GET /health
-        print("GET /health")
-        response = client.get("/health")
-        print(f"  Status: {response.status_code}")
-        print(f"  Response: {response.json()}")
-        print()
+    root_response = client.get("/")
+    assert root_response.status_code == 200
+    assert root_response.json() == {"message": "Hello World"}
 
-
-if __name__ == "__main__":
-    test_all_endpoints()
+    health_response = client.get("/health")
+    assert health_response.status_code == 200
+    assert health_response.json() == {"status": "ok"}
