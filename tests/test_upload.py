@@ -69,15 +69,44 @@ def test_upload_file_saved_to_disk(client):
     processed_file.unlink()
 
 
-def test_upload_rejects_non_jpg(client):
-    """Test that non-JPG files are rejected"""
+def create_test_png():
+    """Create a valid PNG image in memory"""
+    img = Image.new("RGB", (100, 100), color="blue")
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+    return buffer.read()
+
+
+def test_upload_png_success(client):
+    """Test successful PNG file upload"""
+    file_content = create_test_png()
     response = client.post(
         "/upload",
-        files={"file": ("test.png", BytesIO(b"fake png"), "image/png")}
+        files={"file": ("test.png", BytesIO(file_content), "image/png")}
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["filename"] == "test.png"
+    assert data["status"] == "processed"
+    assert data["content_type"] == "image/png"
+    assert data["processed_filename"].endswith(".jpg")
+
+    # Clean up
+    (UPLOADS_DIR / data["stored_filename"]).unlink()
+    (PROCESSED_DIR / data["processed_filename"]).unlink()
+
+
+def test_upload_rejects_unsupported_type(client):
+    """Test that unsupported file types are rejected"""
+    response = client.post(
+        "/upload",
+        files={"file": ("test.gif", BytesIO(b"fake gif"), "image/gif")}
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Only JPG files are allowed"
+    assert response.json()["detail"] == "Only JPG, PNG, and HEIC files are allowed"
 
 
 def test_upload_rejects_pdf(client):
@@ -88,7 +117,7 @@ def test_upload_rejects_pdf(client):
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Only JPG files are allowed"
+    assert response.json()["detail"] == "Only JPG, PNG, and HEIC files are allowed"
 
 
 def test_upload_unique_filenames(client):
